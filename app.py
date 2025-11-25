@@ -6,7 +6,16 @@ from firebase_admin import credentials, firestore, auth
 from functools import wraps
 import calendar
 from werkzeug.utils import secure_filename
+import json
 
+# Firebase initialization for production
+if os.getenv('FIREBASE_CREDENTIALS'):
+    # Production: Load from environment variable
+    firebase_creds = json.loads(os.getenv('FIREBASE_CREDENTIALS'))
+    cred = credentials.Certificate(firebase_creds)
+else:
+    # Local development: Load from file
+    cred = credentials.Certificate('serviceAccountKey.json')
 # --- CONFIGURATION & INITIALIZATION ---
 
 FIREBASE_KEY_PATH = 'serviceAccountKey.json' 
