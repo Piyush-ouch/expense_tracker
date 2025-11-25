@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charts | Money Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #000000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 850px;
+            background-color: #000000;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            color: #fff;
+        }
+
+        .scroll-content {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 20px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .scroll-content::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* --- Header Section --- */
+        .top-header {
+            padding: 20px 20px 10px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        .page-title {
+            font-size: 1.2em;
+            font-weight: 700;
+        }
+        
+        .header-icon-right {
+            position: absolute;
+            right: 20px;
+            font-size: 1.2em;
+        }
+
+        /* --- Time Filter Tabs --- */
+        .time-filter-tabs {
+            display: flex;
+            background-color: #1f1f1f;
+            border-radius: 12px;
+            padding: 2px;
+            margin: 10px 20px;
+            border: 1px solid #333;
+        }
+
+        .filter-tab {
+            flex: 1;
+            text-align: center;
+            padding: 8px 0;
+            font-size: 0.9em;
+            color: #9ca3af;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.2s;
+        }
+
+        .filter-tab.active {
+            background-color: #fff;
+            color: #000;
+            font-weight: 700;
+        }
+
+        /* --- Period Scroller (Month) --- */
+        .period-scroller {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            color: #9ca3af;
+            font-size: 0.95em;
+        }
+
+        .period-nav-btn {
+            cursor: pointer;
+            padding: 5px 10px;
+            font-size: 1.2em;
+        }
+
+        .current-period-text {
+            color: #fff;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        /* --- Chart Section --- */
+        .chart-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 20px;
+            margin-bottom: 10px;
+            gap: 15px;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            width: 160px;
+            height: 160px;
+        }
+
+        .chart-center-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .center-amount {
+            font-size: 1em;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        /* Custom Legend on the Right */
+        .chart-legend {
+            display: none;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 0.85em;
+            justify-content: space-between;
+        }
+        
+        .legend-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid #000;
+            outline: 1px solid #555;
+        }
+
+        .legend-name { color: #ccc; }
+        .legend-percent { color: #fff; font-weight: 600; }
+
+        /* --- Breakdown List --- */
+        .breakdown-list {
+            padding: 0 20px;
+            margin-top: 10px;
+        }
+
+        .breakdown-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 25px;
+            gap: 15px;
+        }
+
+        .bd-icon-box {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2em;
+            flex-shrink: 0;
+            color: #111827; /* Dark icon color like dashboard */
+        }
+
+        .bd-right-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-top: 2px;
+        }
+
+        .bd-text-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .bd-name-percent {
+            font-size: 1em;
+            color: #fff;
+            font-weight: 500;
+        }
+        
+        .bd-percent-muted {
+            color: #9ca3af;
+            font-size: 0.9em;
+            margin-left: 8px;
+        }
+
+        .bd-amount {
+            font-size: 1em;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .bd-progress-track {
+            width: 100%;
+            height: 6px;
+            background-color: #333;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .bd-progress-fill {
+            height: 100%;
+            border-radius: 3px;
+        }
+
+        /* --- Bottom Nav --- */
+        .bottom-nav {
+            background-color: #1f2937;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 10px 0;
+            border-top: 1px solid #374151;
+            z-index: 100;
+            flex-shrink: 0;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #9ca3af;
+            text-decoration: none;
+            font-size: 0.75em;
+            gap: 5px;
+        }
+
+        .nav-item.active {
+            color: #fdd835;
+        }
+
+        .nav-item i {
+            font-size: 1.4em;
+        }
+
+        .fab-btn {
+            background-color: #fdd835;
+            color: #111827;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(253, 216, 53, 0.3);
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="mobile-container">
+        <div class="scroll-content">
+            
+            <div class="top-header">
+                <div class="toggle-row" onclick="toggleChartMode()">
+                    <span class="page-title" id="pageTitle">Expenses</span>
+                    <i class="fas fa-caret-down"></i>
+                </div>
+                <div class="header-icon-right">
+                    <i class="far fa-calendar-alt"></i>
+                </div>
+            </div>
+
+            <div class="time-filter-tabs">
+                <div class="filter-tab {{ 'active' if current_filter == 'week' else '' }}" onclick="setFilter('week')">Week</div>
+                <div class="filter-tab {{ 'active' if current_filter == 'month' else '' }}" onclick="setFilter('month')">Month</div>
+                <div class="filter-tab {{ 'active' if current_filter == 'year' else '' }}" onclick="setFilter('year')">Year</div>
+            </div>
+
+            <div class="period-scroller">
+                <div class="period-nav-btn" onclick="changePeriod(-1)">❮</div>
+                <div class="current-period-text">{{ period_label }}</div>
+                <div class="period-nav-btn" onclick="changePeriod(1)">❯</div>
+            </div>
+
+            <div class="chart-area">
+                <div class="chart-wrapper">
+                    <canvas id="mainChart"></canvas>
+                    <div class="chart-center-text">
+                        <div class="center-amount" id="chartTotalAmount">0</div>
+                    </div>
+                </div>
+                <div class="chart-legend" id="chartLegend">
+                    </div>
+            </div>
+            
+            <div class="breakdown-list" id="breakdownList">
+                </div>
+
+        </div>
+
+        <div class="bottom-nav">
+            <a href="{{ url_for('dashboard') }}" class="nav-item">
+                <i class="fas fa-bars"></i>
+                <span>Records</span>
+            </a>
+            <a href="{{ url_for('charts') }}" class="nav-item active">
+                <i class="fas fa-chart-pie"></i>
+                <span>Charts</span>
+            </a>
+
+            <a href="{{ url_for('add_expense') }}" class="fab-btn">
+                <i class="fas fa-plus"></i>
+            </a>
+
+            <a href="#" class="nav-item">
+                <i class="fas fa-file-alt"></i>
+                <span>Reports</span>
+            </a>
+            <a href="{{ url_for('profile') }}" class="nav-item">
+                <i class="far fa-user"></i>
+                <span>Me</span>
+            </a>
+        </div>
+    </div>
+
+    <script id="expenseData" type="application/json">{{ expense_chart_data | tojson }}</script>
+    <script id="incomeData" type="application/json">{{ income_chart_data | tojson }}</script>
+
+    <script>
+        // --- 1. CONFIGURATION ---
+        // Colors palette for the CHART (Vibrant)
+        const PALETTE = [
+            '#fdd835', // Yellow
+            '#00bcd4', // Cyan
+            '#ff4081', // Pink
+            '#4caf50', // Green
+            '#9c27b0', // Purple
+            '#ff9800'  // Orange
+        ];
+
+        let currentMode = 'expense'; // 'expense' or 'income'
+
+        // --- 2. NAVIGATION ---
+        function setFilter(type) {
+            const year = "{{ current_year }}";
+            const month = "{{ current_month }}";
+            window.location.href = `{{ url_for('charts') }}?filter=${type}&month=${month}&year=${year}`;
+        }
+
+        function changePeriod(delta) {
+            const filter = "{{ current_filter }}";
+            let newMonth = Number("{{ current_month }}");
+            let newYear = Number("{{ current_year }}");
+
+            if (filter === 'month') {
+                newMonth += delta;
+                if (newMonth > 12) { newMonth = 1; newYear++; }
+                if (newMonth < 1) { newMonth = 12; newYear--; }
+            } else if (filter === 'year') {
+                newYear += delta;
+            }
+            window.location.href = `{{ url_for('charts') }}?filter=${filter}&month=${newMonth}&year=${newYear}`;
+        }
+
+        function toggleChartMode() {
+            // Simple toggle between Expense and Income
+            currentMode = (currentMode === 'expense') ? 'income' : 'expense';
+            document.getElementById('pageTitle').innerText = (currentMode === 'expense') ? 'Expenses' : 'Income';
+            updateDashboard(currentMode);
+        }
+
+        // --- 3. CHART & UI LOGIC ---
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDashboard(currentMode);
+        });
+
+        function updateDashboard(type) {
+            const expenseDataEl = document.getElementById('expenseData');
+            const incomeDataEl = document.getElementById('incomeData');
+            
+            if (!expenseDataEl || !incomeDataEl) return;
+
+            const dataRaw = (type === 'expense') 
+                ? JSON.parse(expenseDataEl.textContent || '{}')
+                : JSON.parse(incomeDataEl.textContent || '{}');
+            
+            const labels = Object.keys(dataRaw);
+            const values = Object.values(dataRaw).map(v => v / 100); 
+            const total = values.reduce((acc, val) => acc + val, 0);
+
+            document.getElementById('chartTotalAmount').innerText = total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+            // Sort data by value (descending)
+            const combined = labels.map((label, i) => ({
+                label,
+                value: values[i],
+                // For chart color, use palette. For icon color, we use getCategoryStyle
+                color: PALETTE[i % PALETTE.length] 
+            })).sort((a, b) => b.value - a.value);
+
+            renderChart(combined);
+            renderLegend(combined, total);
+            renderBreakdownList(combined, total);
+        }
+
+        let mainChartInstance = null;
+
+        function renderChart(dataItems) {
+            const ctx = document.getElementById('mainChart').getContext('2d');
+            
+            const labels = dataItems.map(d => d.label);
+            const values = dataItems.map(d => d.value);
+            const colors = dataItems.map(d => d.color);
+
+            if (mainChartInstance) {
+                mainChartInstance.destroy();
+            }
+
+            mainChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors,
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%', 
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: true }
+                    }
+                }
+            });
+        }
+
+        function renderLegend(dataItems, total) {
+            const legendContainer = document.getElementById('chartLegend');
+            legendContainer.innerHTML = '';
+
+            dataItems.forEach(item => {
+                const percent = total > 0 ? (item.value / total * 100).toFixed(2) + '%' : '0%';
+                
+                const html = `
+                    <div class="legend-item">
+                        <div class="legend-left">
+                            <div class="legend-dot" style="background-color: ${item.color}; border-color: ${item.color}"></div>
+                            <span class="legend-name">${item.label}</span>
+                        </div>
+                        <span class="legend-percent">${percent}</span>
+                    </div>
+                `;
+                legendContainer.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        function renderBreakdownList(dataItems, total) {
+            const listContainer = document.getElementById('breakdownList');
+            listContainer.innerHTML = '';
+
+            if (dataItems.length === 0) {
+                listContainer.innerHTML = '<div style="text-align:center;color:#666;margin-top:20px;">No data</div>';
+                return;
+            }
+
+            dataItems.forEach(item => {
+                const percentVal = total > 0 ? (item.value / total * 100) : 0;
+                const percentStr = percentVal.toFixed(2) + '%';
+                
+                // Get the EXACT icon and background color from dashboard logic
+                const styleObj = getCategoryStyle(item.label);
+                
+                const html = `
+                    <div class="breakdown-item">
+                        <div class="bd-icon-box" style="background-color: ${styleObj.color};">
+                             <i class="fas ${styleObj.icon}"></i>
+                        </div>
+                        <div class="bd-right-col">
+                            <div class="bd-text-row">
+                                 <div class="bd-name-percent">
+                                     <span>${item.label}</span>
+                                     <span class="bd-percent-muted">${percentStr}</span>
+                                 </div>
+                                 <div class="bd-amount">${item.value.toLocaleString()}</div>
+                            </div>
+                            <div class="bd-progress-track">
+                                 <div class="bd-progress-fill" style="width: ${percentVal}%; background-color: ${item.color}"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                listContainer.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        // --- EXACT DASHBOARD ICON LOGIC REPLICATED IN JS ---
+        function getCategoryStyle(category) {
+            const styles = {
+                // Expense categories
+                'Shopping': { icon: 'fa-shopping-cart', color: '#fde68a' },
+                'Food': { icon: 'fa-utensils', color: '#a7f3d0' },
+                'Food & Drink': { icon: 'fa-utensils', color: '#a7f3d0' },
+                'Phone': { icon: 'fa-mobile-alt', color: '#e5e7eb' },
+                'Entertainment': { icon: 'fa-film', color: '#fbcfe8' },
+                'Education': { icon: 'fa-graduation-cap', color: '#e5e7eb' },
+                'Beauty': { icon: 'fa-spa', color: '#e5e7eb' },
+                'Sports': { icon: 'fa-football-ball', color: '#e5e7eb' },
+                'Social': { icon: 'fa-users', color: '#e5e7eb' },
+                'Transportation': { icon: 'fa-bus', color: '#bfdbfe' },
+                'Transport': { icon: 'fa-bus', color: '#bfdbfe' },
+                'Clothing': { icon: 'fa-tshirt', color: '#e5e7eb' },
+                'Car': { icon: 'fa-car', color: '#bfdbfe' },
+                'Alcohol': { icon: 'fa-wine-bottle', color: '#e5e7eb' },
+                'Cigarettes': { icon: 'fa-smoking', color: '#e5e7eb' },
+                'Electronics': { icon: 'fa-laptop', color: '#e5e7eb' },
+                'Travel': { icon: 'fa-plane', color: '#e5e7eb' },
+                'Health': { icon: 'fa-heartbeat', color: '#e5e7eb' },
+                'Pets': { icon: 'fa-paw', color: '#e5e7eb' },
+                'Repairs': { icon: 'fa-wrench', color: '#e5e7eb' },
+                'Housing': { icon: 'fa-home', color: '#e5e7eb' },
+                'Home': { icon: 'fa-couch', color: '#e5e7eb' },
+                'Gifts': { icon: 'fa-gift', color: '#e5e7eb' },
+                'Donations': { icon: 'fa-hand-holding-heart', color: '#e5e7eb' },
+                'Lottery': { icon: 'fa-dice', color: '#e5e7eb' },
+                'Snacks': { icon: 'fa-cookie', color: '#e5e7eb' },
+                'Kids': { icon: 'fa-baby', color: '#e5e7eb' },
+                'Vegetables': { icon: 'fa-carrot', color: '#e5e7eb' },
+                'Fruits': { icon: 'fa-apple-alt', color: '#e5e7eb' },
+                'Bills': { icon: 'fa-file-invoice-dollar', color: '#e5e7eb' },
+                'Other': { icon: 'fa-receipt', color: '#e5e7eb' },
+
+                // Income sources
+                'Salary': { icon: 'fa-briefcase', color: '#fdd835' },
+                'Investments': { icon: 'fa-chart-line', color: '#fdd835' },
+                'Part-Time': { icon: 'fa-clock', color: '#fdd835' },
+                'Bonus': { icon: 'fa-gift', color: '#fdd835' },
+                'Others': { icon: 'fa-cog', color: '#fdd835' }
+            };
+
+            return styles[category] || { icon: 'fa-receipt', color: '#e5e7eb' };
+        }
+    </script>
+</body>
+
+</html>

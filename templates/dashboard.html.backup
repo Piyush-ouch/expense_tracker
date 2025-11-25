@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Money Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- MOBILE DASHBOARD STYLES --- */
+        body {
+            background-color: #000000;
+            /* Black background outside the phone view */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            font-family: 'Space Mono', monospace;
+        }
+
+        /* The "Phone" Container */
+        .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            /* Full height of viewport */
+            max-height: 850px;
+            /* Optional: limit height on large screens */
+            background-color: #111827;
+            /* App Background */
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            /* Hide overflow from container */
+        }
+
+        /* Scrollable Content Area */
+        .scroll-content {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 20px;
+            /* Hide scrollbar for cleaner look */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .scroll-content::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Top Header Section */
+        .top-header {
+            background-color: #111827;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .menu-icon,
+        .action-icons i {
+            font-size: 1.2em;
+            color: #ffffff;
+            cursor: pointer;
+        }
+
+        .app-title {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .action-icons {
+            display: flex;
+            gap: 15px;
+        }
+
+        /* Summary Section */
+        .summary-section {
+            padding: 10px 20px;
+            background-color: #111827;
+        }
+
+        .date-selector-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .date-btn {
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 1.5em;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 0;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .year-label {
+            font-size: 0.9em;
+            color: #9ca3af;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .stat-col {
+            text-align: left;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #9ca3af;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        /* Notification Bar */
+        .notification-bar {
+            background-color: #374151;
+            /* Darker gray */
+            color: #ef4444;
+            /* Red text */
+            padding: 10px 20px;
+            font-size: 0.85em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Transaction List */
+        .transaction-list {
+            padding: 0;
+        }
+
+        .daily-group {
+            margin-bottom: 2px;
+        }
+
+        .daily-header {
+            background-color: #1f2937;
+            /* Slightly lighter than bg */
+            padding: 8px 20px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            color: #9ca3af;
+            border-bottom: 1px solid #374151;
+        }
+
+        .transaction-item {
+            background-color: #111827;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #1f2937;
+        }
+
+        .t-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .category-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2em;
+            color: #111827;
+        }
+
+        /* Icon Colors */
+        .icon-food {
+            background-color: #a7f3d0;
+        }
+
+        .icon-shopping {
+            background-color: #fde68a;
+        }
+
+        .icon-transport {
+            background-color: #bfdbfe;
+        }
+
+        .icon-entertainment {
+            background-color: #fbcfe8;
+        }
+
+        .icon-other {
+            background-color: #e5e7eb;
+        }
+
+        .icon-income {
+            background-color: #fdd835;
+        }
+
+        .t-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .t-category {
+            font-weight: 600;
+            font-size: 1em;
+            color: #fff;
+        }
+
+        .t-desc {
+            font-size: 0.8em;
+            color: #9ca3af;
+        }
+
+        .t-amount {
+            font-weight: 600;
+            font-size: 1em;
+        }
+
+        .amount-expense {
+            color: #ffffff;
+        }
+
+        .amount-income {
+            color: #ffffff;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            background-color: #1f2937;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 10px 0;
+            border-top: 1px solid #374151;
+            z-index: 100;
+            flex-shrink: 0;
+            /* Prevent shrinking */
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #9ca3af;
+            text-decoration: none;
+            font-size: 0.75em;
+            gap: 5px;
+        }
+
+        .nav-item.active {
+            color: #fdd835;
+        }
+
+        .nav-item i {
+            font-size: 1.4em;
+        }
+
+        .fab-btn {
+            background-color: #fdd835;
+            color: #111827;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            margin-bottom: 25px;
+            /* Push it up slightly */
+            box-shadow: 0 4px 10px rgba(253, 216, 53, 0.3);
+            border: none;
+            cursor: pointer;
+        }
+
+        /* FAB Menu Modal */
+        .fab-menu-overlay {
+            display: none;
+            position: absolute;
+            /* Relative to mobile-container */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 200;
+            justify-content: center;
+            align-items: flex-end;
+            padding-bottom: 100px;
+        }
+
+        .fab-menu {
+            display: flex;
+            gap: 20px;
+        }
+
+        .fab-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #fff;
+            text-decoration: none;
+            gap: 10px;
+        }
+
+        .fab-icon-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            color: #111827;
+        }
+
+        /* Date Picker Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: absolute;
+            /* Relative to mobile-container */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #1f2937;
+            color: #fff;
+            padding: 25px;
+            border-radius: 15px;
+            width: 85%;
+            /* Responsive width */
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            border: 1px solid #374151;
+        }
+
+        .modal-header {
+            font-size: 1.2em;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .year-selector {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+
+        .year-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .month-item {
+            padding: 10px 5px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.2s;
+            font-size: 0.9em;
+        }
+
+        .month-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .month-item.selected {
+            background: #fdd835;
+            color: #111827;
+            font-weight: 700;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+        }
+
+        .modal-btn {
+            background: none;
+            border: none;
+            font-weight: 700;
+            font-size: 1em;
+            cursor: pointer;
+        }
+
+        .btn-cancel {
+            color: #fdd835;
+            opacity: 0.8;
+        }
+
+        .btn-confirm {
+            color: #fdd835;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="mobile-container">
+
+        <div class="scroll-content">
+            <!-- Top Header -->
+            <div class="top-header">
+                <div class="menu-icon"><i class="fas fa-bars"></i></div>
+                <div class="app-title">Money Tracker</div>
+                <div class="action-icons">
+                    <i class="fas fa-search"></i>
+                    <i class="far fa-calendar-alt"></i>
+                </div>
+            </div>
+
+            <!-- Summary Section -->
+            <div class="summary-section">
+                <div class="year-label">{{ current_year }}</div>
+                <div class="date-selector-row">
+                    <button class="date-btn" onclick="openDateModal()">
+                        {{ month_name }} <i class="fas fa-chevron-down" style="font-size: 0.6em;"></i>
+                    </button>
+                </div>
+
+                <div class="stats-row">
+                    <div class="stat-col">
+                        <div class="stat-label">Expenses</div>
+                        <div class="stat-value">{{ '%.0f' | format(total_expense / 100) }}</div>
+                    </div>
+                    <div class="stat-col">
+                        <div class="stat-label">Income</div>
+                        <div class="stat-value">{{ '%.0f' | format(total_income / 100) }}</div>
+                    </div>
+                    <div class="stat-col">
+                        <div class="stat-label">Balance</div>
+                        <div class="stat-value">{{ '%.0f' | format(net_balance / 100) }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notification Bar -->
+            <div class="notification-bar">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>After logging in, you can back up your data in real time!</span>
+            </div>
+
+            <!-- Transaction List -->
+            <div class="transaction-list">
+                {% for group in grouped_transactions %}
+                <div class="daily-group">
+                    <div class="daily-header">
+                        <span>{{ group.display_date }}</span>
+                        <span>Expenses: {{ '%.0f' | format(group.daily_expense / 100) }} &nbsp; Income: {{ '%.0f' |
+                            format(group.daily_income / 100) }}</span>
+                    </div>
+
+                    {% for t in group.transaction_list %}
+                    <div class="transaction-item">
+                        <div class="t-left">
+                            <!-- Icon Logic -->
+                            {% set icon_class = 'icon-other' %}
+                            {% set icon_symbol = 'fa-receipt' %}
+
+                            {% if t.type == 'income' %}
+                            {% set icon_class = 'icon-income' %}
+                            {% set icon_symbol = 'fa-wallet' %}
+                            {% elif 'Food' in t.category %}
+                            {% set icon_class = 'icon-food' %}
+                            {% set icon_symbol = 'fa-utensils' %}
+                            {% elif 'Shopping' in t.category %}
+                            {% set icon_class = 'icon-shopping' %}
+                            {% set icon_symbol = 'fa-shopping-cart' %}
+                            {% elif 'Transport' in t.category %}
+                            {% set icon_class = 'icon-transport' %}
+                            {% set icon_symbol = 'fa-car' %}
+                            {% elif 'Entertainment' in t.category %}
+                            {% set icon_class = 'icon-entertainment' %}
+                            {% set icon_symbol = 'fa-film' %}
+                            {% endif %}
+
+                            <div class="category-icon {{ icon_class }}">
+                                <i class="fas {{ icon_symbol }}"></i>
+                            </div>
+                            <div class="t-details">
+                                <span class="t-category">{{ t.category if t.type == 'expense' else t.source }}</span>
+                                {% if t.description %}
+                                <span class="t-desc">{{ t.description }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="t-amount {{ 'amount-income' if t.type == 'income' else 'amount-expense' }}">
+                            <div class="year-selector">
+                                <button class="year-btn" onclick="changeYear(-1)">❮</button>
+                                <span id="modalYear">{{ current_year }}</span>
+                                <button class="year-btn" onclick="changeYear(1)">❯</button>
+                            </div>
+                            <div class="month-grid" id="monthGrid"></div>
+                            <div class="modal-actions">
+                                <button class="modal-btn btn-cancel" onclick="closeDateModal()">Cancel</button>
+                                <button class="modal-btn btn-confirm" onclick="applyDateFilter()">Confirm</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div> <!-- End Mobile Container -->
+
+                <!-- Scripts -->
+                <script>
+                    // Date Picker Logic
+                    let selectedYear = Number("{{ current_year }}");
+                    let selectedMonth = Number("{{ current_month }}");
+                    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+                    function openDateModal() {
+                        document.getElementById('dateModal').style.display = 'flex';
+                        renderMonths();
+                        document.getElementById('modalYear').innerText = selectedYear;
+                    }
+
+                    function closeDateModal() {
+                        document.getElementById('dateModal').style.display = 'none';
+                    }
+
+                    function changeYear(delta) {
+                        selectedYear += delta;
+                        document.getElementById('modalYear').innerText = selectedYear;
+                    }
+
+                    function selectMonth(index) {
+                        selectedMonth = index + 1;
+                        renderMonths();
+                    }
+
+                    function renderMonths() {
+                        const grid = document.getElementById('monthGrid');
+                        grid.innerHTML = '';
+                        months.forEach((m, index) => {
+                            const div = document.createElement('div');
+                            div.className = `month-item ${index + 1 === selectedMonth ? 'selected' : ''}`;
+                            div.innerText = m;
+                            div.onclick = () => selectMonth(index);
+                            grid.appendChild(div);
+                        });
+                    }
+
+                    function applyDateFilter() {
+                        window.location.href = `{{ url_for('dashboard') }}?month=${selectedMonth}&year=${selectedYear}`;
+                    }
+
+                    // FAB Menu Logic
+                    function toggleFabMenu() {
+                        const menu = document.getElementById('fabMenu');
+                        if (menu.style.display === 'flex') {
+                            menu.style.display = 'none';
+                        } else {
+                            menu.style.display = 'flex';
+                        }
+                    }
+
+                    window.onclick = function (event) {
+                        const modal = document.getElementById('dateModal');
+                        if (event.target == modal) {
+                            closeDateModal();
+                        }
+                    }
+                </script>
+</body>
+
+</html>

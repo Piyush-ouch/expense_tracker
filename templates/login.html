@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Money Tracker | Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Mono', monospace;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 850px;
+            background-color: #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+            color: #fff;
+            overflow: hidden;
+            padding: 40px 30px;
+        }
+
+        .logo-area {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .logo-icon {
+            font-size: 4em;
+            color: #fdd835;
+            margin-bottom: 10px;
+        }
+
+        .logo-text {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .logo-subtext {
+            font-size: 0.9em;
+            color: #9ca3af;
+            margin-top: 5px;
+        }
+
+        .tab-switcher {
+            display: flex;
+            margin-bottom: 30px;
+            background-color: #2a2a2a;
+            border-radius: 10px;
+            padding: 3px;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95em;
+        }
+
+        .tab.active {
+            background-color: #fff;
+            color: #000;
+            font-weight: 700;
+        }
+
+        .form-container {
+            display: none;
+        }
+
+        .form-container.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #9ca3af;
+            font-size: 0.9em;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            background-color: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1em;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: #fdd835;
+        }
+
+        input::placeholder {
+            color: #666;
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+
+        .forgot-password a {
+            color: #fdd835;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(180deg, #fdd835 0%, #f9ca24 100%);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(253, 216, 53, 0.3);
+        }
+
+        .submit-btn:active {
+            transform: scale(0.98);
+        }
+
+        .switch-text {
+            text-align: center;
+            margin-top: 20px;
+            color: #9ca3af;
+            font-size: 0.9em;
+        }
+
+        .switch-text a {
+            color: #fdd835;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .error {
+            background-color: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="mobile-container">
+        <div class="logo-area">
+            <div class="logo-icon">💰</div>
+            <div class="logo-text">Money Tracker</div>
+            <div class="logo-subtext">Track your expenses wisely</div>
+        </div>
+
+        <div class="tab-switcher">
+            <div class="tab active" onclick="switchTab('login')">Log in</div>
+            <div class="tab" onclick="switchTab('signup')">Sign up</div>
+        </div>
+
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+
+        <!-- Login Form -->
+        <div id="loginFormContainer" class="form-container active">
+            <form id="loginForm" action="{{ url_for('login') }}" method="POST">
+                <div class="form-group">
+                    <label for="login-email">Email Address</label>
+                    <input type="email" id="login-email" name="email" required placeholder="your@email.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" name="password" required placeholder="••••••••">
+                </div>
+
+                <div class="forgot-password">
+                    <a href="#">Forgot password?</a>
+                </div>
+
+                <input type="hidden" id="idToken" name="idToken" value="">
+
+                <button type="submit" class="submit-btn">Continue</button>
+            </form>
+
+            <div class="switch-text">
+                Don't have an account? <a href="#" onclick="switchTab('signup'); return false;">Sign up</a>
+            </div>
+        </div>
+
+        <!-- Signup Form -->
+        <div id="signupFormContainer" class="form-container">
+            <form id="registerForm" action="{{ url_for('register') }}" method="POST">
+                <div class="form-group">
+                    <label for="reg-name">Full Name</label>
+                    <input type="text" id="reg-name" name="name" required placeholder="John Doe">
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-email">Email Address</label>
+                    <input type="email" id="reg-email" name="email" required placeholder="your@email.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-password">Password</label>
+                    <input type="password" id="reg-password" name="password" required
+                        placeholder="Create a strong password">
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-currency">Base Currency</label>
+                    <select id="reg-currency" name="currency" required>
+                        {% for code, info in currencies.items() %}
+                        <option value="{{ code }}">{{ info.symbol }} - {{ info.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="submit-btn">Create Account</button>
+            </form>
+
+            <div class="switch-text">
+                Already have an account? <a href="#" onclick="switchTab('login'); return false;">Log in</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        function switchTab(tab) {
+            const tabs = document.querySelectorAll('.tab');
+            const loginFormContainer = document.getElementById('loginFormContainer');
+            const signupFormContainer = document.getElementById('signupFormContainer');
+
+            tabs.forEach(t => t.classList.remove('active'));
+
+            if (tab === 'login') {
+                tabs[0].classList.add('active');
+                loginFormContainer.classList.add('active');
+                signupFormContainer.classList.remove('active');
+            } else {
+                tabs[1].classList.add('active');
+                signupFormContainer.classList.add('active');
+                loginFormContainer.classList.remove('active');
+            }
+        }
+    </script>
+</body>
+
+</html>

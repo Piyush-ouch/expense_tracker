@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charts | Money Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #000000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 850px;
+            background-color: #111827;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+
+        .scroll-content {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 20px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .scroll-content::-webkit-scrollbar {
+            display: none;
+        }
+
+        .top-header {
+            background-color: #111827;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .menu-icon,
+        .action-icons i {
+            font-size: 1.2em;
+            color: #ffffff;
+            cursor: pointer;
+        }
+
+        .app-title {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .action-icons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .dashboard-header {
+            background-color: #111827;
+            padding: 10px 20px 20px 20px;
+            border-bottom: 1px solid #374151;
+        }
+
+        .chart-toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .toggle-container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .toggle-btn {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #9ca3af;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .toggle-btn.active {
+            color: #fff;
+        }
+
+        .toggle-btn.active::after {
+            content: '▼';
+            font-size: 0.6em;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
+
+        .date-trigger {
+            color: #fff;
+            font-size: 1.2em;
+            cursor: pointer;
+        }
+
+        .time-filter-tabs {
+            display: flex;
+            background-color: #1f2937;
+            border-radius: 8px;
+            padding: 2px;
+            margin-bottom: 20px;
+        }
+
+        .filter-tab {
+            flex: 1;
+            text-align: center;
+            padding: 8px 0;
+            font-size: 0.9em;
+            color: #9ca3af;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .filter-tab.active {
+            background-color: #fff;
+            color: #111827;
+            font-weight: 700;
+        }
+
+        .period-label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            color: #9ca3af;
+            font-size: 0.9em;
+        }
+
+        .period-nav {
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .current-period {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 220px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            width: 200px;
+            height: 200px;
+        }
+
+        .chart-center-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .center-amount {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .center-label {
+            font-size: 0.8em;
+            color: #9ca3af;
+        }
+
+        .breakdown-list {
+            margin-top: 20px;
+        }
+
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .bd-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bd-color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid #111827;
+            outline: 1px solid #374151;
+        }
+
+        .bd-name {
+            color: #fff;
+            font-size: 0.95em;
+        }
+
+        .bd-percent {
+            color: #9ca3af;
+            font-size: 0.9em;
+            margin-left: 5px;
+        }
+
+        .bd-amount {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .bottom-nav {
+            background-color: #1f2937;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 10px 0;
+            border-top: 1px solid #374151;
+            z-index: 100;
+            flex-shrink: 0;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #9ca3af;
+            text-decoration: none;
+            font-size: 0.75em;
+            gap: 5px;
+        }
+
+        .nav-item.active {
+            color: #fdd835;
+        }
+
+        .nav-item i {
+            font-size: 1.4em;
+        }
+
+        .fab-btn {
+            background-color: #fdd835;
+            color: #111827;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(253, 216, 53, 0.3);
+            border: none;
+            cursor: pointer;
+        }
+
+        .fab-menu-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 200;
+            justify-content: center;
+            align-items: flex-end;
+            padding-bottom: 100px;
+        }
+
+        .fab-menu {
+            display: flex;
+            gap: 20px;
+        }
+
+        .fab-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #fff;
+            text-decoration: none;
+            gap: 10px;
+        }
+
+        .fab-icon-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            color: #111827;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="mobile-container">
+        <div class="scroll-content">
+            <div class="top-header">
+                <div class="menu-icon"><i class="fas fa-bars"></i></div>
+                <div class="app-title">Money Tracker</div>
+                <div class="action-icons">
+                    <i class="fas fa-search"></i>
+                </div>
+            </div>
+
+            <div class="dashboard-header">
+                <div class="chart-toggle-row">
+                    <div class="toggle-container">
+                        <span id="toggle-expense" class="toggle-btn active"
+                            onclick="switchChartType('expense')">Expenses</span>
+                        <span id="toggle-income" class="toggle-btn" onclick="switchChartType('income')">Income</span>
+                    </div>
+                    <div class="date-trigger">
+                        <i class="far fa-calendar-alt"></i>
+                    </div>
+                </div>
+
+                <div class="time-filter-tabs">
+                    <div class="filter-tab {% if current_filter == 'week' %}active{% endif %}"
+                        onclick="setFilter('week')">Week</div>
+                    <div class="filter-tab {% if current_filter == 'month' %}active{% endif %}"
+                        onclick="setFilter('month')">Month</div>
+                    <div class="filter-tab {% if current_filter == 'year' %}active{% endif %}"
+                        onclick="setFilter('year')">Year</div>
+                </div>
+
+                <div class="period-label-row">
+                    <span class="period-nav" onclick="changePeriod(-1)">❮</span>
+                    <span class="current-period">{{ period_label }}</span>
+                    <span class="period-nav" onclick="changePeriod(1)">❯</span>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-wrapper">
+                        <canvas id="mainChart"></canvas>
+                        <div class="chart-center-text">
+                            <div class="center-label">Total</div>
+                            <div class="center-amount" id="chartTotalAmount">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="breakdown-list" id="breakdownList">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-nav">
+            <a href="{{ url_for('dashboard') }}" class="nav-item">
+                <i class="fas fa-bars"></i>
+                <span>Records</span>
+            </a>
+
+            <button class="fab-btn" onclick="toggleFabMenu()">
+                <i class="fas fa-plus"></i>
+            </button>
+
+            <a href="{{ url_for('charts') }}" class="nav-item active">
+                <i class="fas fa-chart-pie"></i>
+                <span>Charts</span>
+            </a>
+            <a href="{{ url_for('logout') }}" class="nav-item">
+                <i class="far fa-user"></i>
+                <span>Me</span>
+            </a>
+        </div>
+
+        <div id="fabMenu" class="fab-menu-overlay" onclick="toggleFabMenu()">
+            <div class="fab-menu" onclick="event.stopPropagation()">
+                <a href="{{ url_for('add_expense') }}" class="fab-option">
+                    <div class="fab-icon-circle" style="background-color: #ff006e;">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                    <span>Expense</span>
+                </a>
+                <a href="{{ url_for('add_income') }}" class="fab-option">
+                    <div class="fab-icon-circle" style="background-color: #38a169;">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <span>Income</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script id="expenseData" type="application/json">{{ expense_chart_data | tojson }}</script>
+    <script id="incomeData" type="application/json">{{ income_chart_data | tojson }}</script>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        const currentYear = { current_year };
+        const currentMonth = { current_month };
+        const currentDay = { current_day };
+        const currentFilterType = "{{ current_filter }}";
+
+        function setFilter(type) {
+            window.location.href = `{{ url_for('charts') }}?filter=${type}&month=${currentMonth}&year=${currentYear}`;
+        }
+
+        function changePeriod(delta) {
+            let newMonth = currentMonth;
+            let newYear = currentYear;
+
+            if (currentFilterType === 'month') {
+                newMonth += delta;
+                if (newMonth > 12) {
+                    newMonth = 1;
+                    newYear++;
+                }
+                if (newMonth < 1) {
+                    newMonth = 12;
+                    newYear--;
+                }
+            } else if (currentFilterType === 'year') {
+                newYear += delta;
+            }
+
+            window.location.href = `{{ url_for('charts') }}?filter=${currentFilterType}&month=${newMonth}&year=${newYear}`;
+        }
+
+        function toggleFabMenu() {
+            const menu = document.getElementById('fabMenu');
+            menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+        }
+    </script>
+</body>
+
+</html>

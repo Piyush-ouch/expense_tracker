@@ -1,0 +1,153 @@
+/* static/css/style.css */
+
+/* Global Reset and Font */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* Dark Theme Palette */
+    --bg-dark: #111827;
+    /* Deep Blue/Gray Background */
+    --bg-card: #1f2937;
+    /* Lighter Card Background */
+    --text-primary: #ffffff;
+    /* White Text */
+    --text-secondary: #9ca3af;
+    /* Muted Text */
+    --accent-yellow: #fdd835;
+    /* Yellow Accent */
+    --accent-green: #10b981;
+    /* Success Green */
+    --accent-red: #ef4444;
+    /* Error Red */
+    --input-bg: #374151;
+    /* Input Background */
+    --border-color: #4b5563;
+    /* Border Color */
+}
+
+body {
+    font-family: 'Space Mono', monospace;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* Core Container Style (Centralized, mobile-focused) */
+.container {
+    max-width: 420px;
+    width: 100%;
+    background: var(--bg-card);
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    padding: 30px 20px;
+    text-align: center;
+    color: var(--text-primary);
+}
+
+/* Form Elements Consistency */
+form label {
+    display: block;
+    text-align: left;
+    margin-bottom: 5px;
+    margin-top: 15px;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+input:not([type="hidden"]),
+select {
+    width: 100%;
+    padding: 12px;
+    margin: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-sizing: border-box;
+    background-color: var(--input-bg);
+    color: var(--text-primary);
+    font-size: 1em;
+    text-align: left;
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    border-color: var(--accent-yellow);
+    box-shadow: 0 0 0 2px rgba(253, 216, 53, 0.2);
+}
+
+/* Button Consistency */
+.submit-btn {
+    padding: 14px 20px;
+    margin-top: 25px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    font-weight: 700;
+    font-size: 1em;
+    transition: background 0.3s, transform 0.1s;
+    color: #111827;
+    /* Dark text on buttons for contrast */
+}
+
+.submit-btn:active {
+    transform: scale(0.98);
+}
+
+/* Color Scheme Consistency */
+.green-btn {
+    background-color: var(--accent-yellow);
+    /* Using Yellow as primary action now per request */
+    color: #111827;
+}
+
+.green-btn:hover {
+    background-color: #fbc02d;
+}
+
+.pink-btn {
+    background-color: var(--accent-yellow);
+    /* Unifying primary actions to yellow */
+    color: #111827;
+}
+
+.pink-btn:hover {
+    background-color: #fbc02d;
+}
+
+/* Utility classes */
+.error {
+    color: #fca5a5;
+    background: rgba(239, 68, 68, 0.2);
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    text-align: center;
+    border: 1px solid var(--accent-red);
+    font-size: 0.9em;
+}
+
+a {
+    color: var(--accent-yellow);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+h1,
+h2,
+h3 {
+    color: var(--text-primary);
+}

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile | Money Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Space Mono', monospace; background-color: #000; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        
+        .mobile-container {
+            width: 100%; max-width: 375px; height: 100vh; max-height: 850px;
+            background-color: #111827; display: flex; flex-direction: column;
+            position: relative; box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+            color: #fff; overflow: hidden;
+        }
+
+        .scroll-content { flex: 1; overflow-y: auto; padding-bottom: 20px; scrollbar-width: none; -ms-overflow-style: none; }
+        .scroll-content::-webkit-scrollbar { display: none; }
+
+        .top-header { padding: 20px; display: flex; justify-content: center; align-items: center; border-bottom: 1px solid #374151; }
+        .header-title { font-size: 1.2em; font-weight: 700; }
+
+        .profile-section { padding: 40px 20px; text-align: center; }
+        
+        /* Profile Pic Styles */
+        .profile-pic-wrapper {
+            position: relative;
+            width: 100px; height: 100px; margin: 0 auto 20px;
+        }
+
+        .profile-avatar {
+            width: 100%; height: 100%; border-radius: 50%;
+            background: linear-gradient(135deg, #fdd835 0%, #f9ca24 100%);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 3em; color: #111827; overflow: hidden;
+            box-shadow: 0 4px 15px rgba(253, 216, 53, 0.3);
+            border: 3px solid #1f2937;
+        }
+        
+        .profile-avatar img {
+            width: 100%; height: 100%; object-fit: cover;
+        }
+
+        .camera-overlay {
+            position: absolute; bottom: 0; right: 0;
+            background-color: #fdd835; color: #111827;
+            width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.9em; cursor: pointer;
+            border: 2px solid #111827;
+            transition: transform 0.2s;
+        }
+        
+        .camera-overlay:active { transform: scale(0.9); }
+
+        .profile-name { font-size: 1.5em; font-weight: 700; margin-bottom: 5px; }
+        .profile-email { font-size: 0.9em; color: #9ca3af; margin-bottom: 30px; }
+
+        .menu-section { padding: 0 20px; }
+
+        .menu-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 18px 20px; background-color: #1f2937;
+            border-radius: 12px; margin-bottom: 12px;
+            cursor: pointer; transition: all 0.2s;
+            text-decoration: none; color: #fff;
+        }
+
+        .menu-item:active { transform: scale(0.98); background-color: #2a3a4a; }
+        
+        .menu-item-left { display: flex; align-items: center; gap: 15px; }
+        
+        .menu-icon {
+            width: 40px; height: 40px; border-radius: 10px;
+            background-color: rgba(253, 216, 53, 0.1);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2em; color: #fdd835;
+        }
+
+        .menu-text { font-size: 1em; }
+        .menu-arrow { color: #9ca3af; font-size: 0.9em; display: flex; align-items: center; gap: 10px; }
+
+        /* Logout Specific */
+        .logout-btn { background-color: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; margin-top: 20px; }
+        .logout-btn .menu-icon { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; }
+        .logout-btn .menu-text { color: #ef4444; }
+
+        /* Bottom Nav */
+        .bottom-nav { background-color: #1f2937; display: flex; justify-content: space-around; align-items: center; padding: 10px 0; border-top: 1px solid #374151; flex-shrink: 0; z-index: 100;}
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #9ca3af; text-decoration: none; font-size: 0.75em; gap: 5px; }
+        .nav-item.active { color: #fdd835; }
+        .nav-item i { font-size: 1.4em; }
+        
+        .fab-btn {
+            background-color: #fdd835; color: #111827; width: 50px; height: 50px;
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            font-size: 1.5em; margin-bottom: 25px; box-shadow: 0 4px 10px rgba(253, 216, 53, 0.3);
+            text-decoration: none; border: none; cursor: pointer;
+        }
+
+        .version-info { text-align: center; padding: 20px; color: #6b7280; font-size: 0.8em; }
+        
+        /* Hidden file input */
+        #profilePicInput { display: none; }
+    </style>
+</head>
+
+<body>
+    <div class="mobile-container">
+        <div class="scroll-content">
+            <div class="top-header">
+                <div class="header-title">Profile</div>
+            </div>
+
+            <div class="profile-section">
+                <div class="profile-pic-wrapper">
+                    <div class="profile-avatar">
+                        {% if profile_pic %}
+                            <img src="{{ url_for('static', filename='profile_pics/' + profile_pic) }}" alt="Profile Pic">
+                        {% else %}
+                            <i class="fas fa-user"></i>
+                        {% endif %}
+                    </div>
+                    <div class="camera-overlay" onclick="document.getElementById('profilePicInput').click()">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                    
+                    <form id="uploadForm" action="{{ url_for('profile') }}" method="POST" enctype="multipart/form-data">
+                        <input type="file" id="profilePicInput" name="profile_pic" accept="image/*" onchange="document.getElementById('uploadForm').submit()">
+                    </form>
+                </div>
+
+                <div class="profile-name">{{ user_name }}</div>
+                <div class="profile-email">{{ user_email }}</div>
+            </div>
+
+            <div class="menu-section">
+                <a href="#" class="menu-item">
+                    <div class="menu-item-left">
+                        <div class="menu-icon"><i class="fas fa-wallet"></i></div>
+                        <div class="menu-text">Currency</div>
+                    </div>
+                    <div class="menu-arrow">
+                        <span>{{ user_currency }}</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </a>
+
+                <a href="#" class="menu-item">
+                    <div class="menu-item-left">
+                        <div class="menu-icon"><i class="fas fa-bell"></i></div>
+                        <div class="menu-text">Notifications</div>
+                    </div>
+                    <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
+                </a>
+
+                <a href="#" class="menu-item">
+                    <div class="menu-item-left">
+                        <div class="menu-icon"><i class="fas fa-shield-alt"></i></div>
+                        <div class="menu-text">Privacy & Security</div>
+                    </div>
+                    <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
+                </a>
+
+                <a href="#" class="menu-item">
+                    <div class="menu-item-left">
+                        <div class="menu-icon"><i class="fas fa-question-circle"></i></div>
+                        <div class="menu-text">Help & Support</div>
+                    </div>
+                    <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
+                </a>
+
+                <a href="{{ url_for('logout') }}" class="menu-item logout-btn">
+                    <div class="menu-item-left">
+                        <div class="menu-icon"><i class="fas fa-sign-out-alt"></i></div>
+                        <div class="menu-text">Logout</div>
+                    </div>
+                    <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
+                </a>
+            </div>
+
+            <div class="version-info">Money Tracker v1.0.0</div>
+        </div>
+
+        <div class="bottom-nav">
+            <a href="{{ url_for('dashboard') }}" class="nav-item">
+                <i class="fas fa-bars"></i>
+                <span>Records</span>
+            </a>
+            <a href="{{ url_for('charts') }}" class="nav-item">
+                <i class="fas fa-chart-pie"></i>
+                <span>Charts</span>
+            </a>
+
+            <a href="{{ url_for('add_expense') }}" class="fab-btn">
+                <i class="fas fa-plus"></i>
+            </a>
+
+            <a href="#" class="nav-item">
+                <i class="fas fa-file-alt"></i>
+                <span>Reports</span>
+            </a>
+            <a href="{{ url_for('profile') }}" class="nav-item active">
+                <i class="far fa-user"></i>
+                <span>Me</span>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

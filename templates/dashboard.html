@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Money Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #000000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 850px;
+            background-color: #111827;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+
+        .scroll-content {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 20px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .scroll-content::-webkit-scrollbar {
+            display: none;
+        }
+
+        .top-header {
+            background-color: #111827;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .menu-icon,
+        .action-icons i {
+            font-size: 1.2em;
+            color: #ffffff;
+            cursor: pointer;
+        }
+
+        .app-title {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .action-icons {
+            display: flex;
+            gap: 15px;
+        }
+
+        /* SEARCH BAR STYLES */
+        .search-overlay {
+            display: none; /* Hidden by default */
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #111827;
+            z-index: 20;
+            align-items: center;
+            padding: 0 15px;
+        }
+
+        .search-input {
+            flex: 1;
+            background: #1f2937;
+            border: none;
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-family: 'Space Mono', monospace;
+            outline: none;
+            font-size: 0.9em;
+        }
+
+        .search-close-btn {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            margin-left: 10px;
+            cursor: pointer;
+            font-size: 1.2em;
+        }
+
+        .summary-section {
+            padding: 10px 20px;
+            background-color: #111827;
+        }
+
+        .year-label {
+            font-size: 0.9em;
+            color: #9ca3af;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .date-selector-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .date-btn {
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 1.5em;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 0;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .stat-col {
+            text-align: left;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #9ca3af;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .notification-bar {
+            background-color: #374151;
+            color: #ef4444;
+            padding: 10px 20px;
+            font-size: 0.85em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .transaction-list {
+            padding: 0;
+        }
+
+        .daily-group {
+            margin-bottom: 2px;
+        }
+
+        .daily-header {
+            background-color: #1f2937;
+            padding: 8px 20px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            color: #9ca3af;
+            border-bottom: 1px solid #374151;
+        }
+
+        .transaction-item {
+            background-color: #111827;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #1f2937;
+        }
+
+        .t-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .category-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2em;
+            color: #111827;
+        }
+
+        /* Icon Colors */
+        .icon-food { background-color: #a7f3d0; }
+        .icon-shopping { background-color: #fde68a; }
+        .icon-transport { background-color: #bfdbfe; }
+        .icon-entertainment { background-color: #fbcfe8; }
+        .icon-other { background-color: #e5e7eb; }
+        .icon-income { background-color: #fdd835; }
+
+        .t-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .t-category {
+            font-weight: 600;
+            font-size: 1em;
+            color: #fff;
+        }
+
+        .t-desc {
+            font-size: 0.8em;
+            color: #9ca3af;
+        }
+
+        .t-amount {
+            font-weight: 600;
+            font-size: 1em;
+        }
+
+        .amount-expense { color: #ffffff; }
+        .amount-income { color: #ffffff; }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            background-color: #1f2937;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 10px 0;
+            border-top: 1px solid #374151;
+            z-index: 100;
+            flex-shrink: 0;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #9ca3af;
+            text-decoration: none;
+            font-size: 0.75em;
+            gap: 5px;
+        }
+
+        .nav-item.active { color: #fdd835; }
+        .nav-item i { font-size: 1.4em; }
+
+        .fab-btn {
+            background-color: #fdd835;
+            color: #111827;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(253, 216, 53, 0.3);
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #1f2937;
+            color: #fff;
+            padding: 25px;
+            border-radius: 15px;
+            width: 85%;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            border: 1px solid #374151;
+        }
+
+        .modal-header {
+            font-size: 1.2em;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .year-selector {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+
+        .year-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .month-item {
+            padding: 10px 5px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.2s;
+            font-size: 0.9em;
+        }
+
+        .month-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .month-item.selected {
+            background: #fdd835;
+            color: #111827;
+            font-weight: 700;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+        }
+
+        .modal-btn {
+            background: none;
+            border: none;
+            font-weight: 700;
+            font-size: 1em;
+            cursor: pointer;
+        }
+
+        .btn-cancel { color: #fdd835; opacity: 0.8; }
+        .btn-confirm { color: #fdd835; }
+        
+        /* No results message */
+        #noResultsMsg {
+            display: none;
+            text-align: center;
+            padding: 30px;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="mobile-container">
+        <div class="scroll-content">
+            <div class="top-header">
+                <div class="menu-icon"><i class="fas fa-bars"></i></div>
+                <div class="app-title">Money Tracker</div>
+                <div class="action-icons">
+                    <i class="fas fa-search" onclick="toggleSearch()"></i>
+                    <i class="far fa-calendar-alt"></i>
+                </div>
+
+                <div class="search-overlay" id="searchBar">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search transactions..." onkeyup="filterTransactions()">
+                    <button class="search-close-btn" onclick="toggleSearch()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="summary-section">
+                <div class="year-label">{{ current_year }}</div>
+                <div class="date-selector-row">
+                    <button class="date-btn" onclick="openDateModal()">
+                        {{ month_name }} <i class="fas fa-chevron-down" style="font-size: 0.6em;"></i>
+                    </button>
+                </div>
+
+                <div class="stats-row">
+                    <div class="stat-col">
+                        <div class="stat-label">Expenses</div>
+                        <div class="stat-value">{{ '%.0f' | format(total_expense / 100) }}</div>
+                    </div>
+                    <div class="stat-col">
+                        <div class="stat-label">Income</div>
+                        <div class="stat-value">{{ '%.0f' | format(total_income / 100) }}</div>
+                    </div>
+                    <div class="stat-col">
+                        <div class="stat-label">Balance</div>
+                        <div class="stat-value">{{ '%.0f' | format(net_balance / 100) }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="notification-bar">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>After logging in, you can back up your data in real time!</span>
+            </div>
+            
+            <div class="transaction-list" id="transactionList">
+                <div id="noResultsMsg">
+                    <i class="fas fa-search" style="font-size: 2em; margin-bottom: 10px;"></i>
+                    <p>No matching transactions found.</p>
+                </div>
+
+                {% for group in grouped_transactions %}
+                <div class="daily-group">
+                    <div class="daily-header">
+                        <span>{{ group.display_date }}</span>
+                        <span>Expenses: {{ '%.0f' | format(group.daily_expense / 100) }} &nbsp; Income: {{ '%.0f' |
+                            format(group.daily_income / 100) }}</span>
+                    </div>
+
+                    {% for t in group.transaction_list %}
+                    <div class="transaction-item">
+                        <div class="t-left">
+                            {% set icon_class = 'icon-other' %}
+                            {% set icon_symbol = 'fa-receipt' %}
+
+                            {% if t.type == 'income' %}
+                                {% set icon_class = 'icon-income' %}
+                                {% set icon_symbol = 'fa-wallet' %}
+                            {% elif t.category == 'Shopping' %}
+                                {% set icon_class = 'icon-shopping' %}
+                                {% set icon_symbol = 'fa-shopping-cart' %}
+                            {% elif t.category == 'Food' or 'Food' in t.category %}
+                                {% set icon_class = 'icon-food' %}
+                                {% set icon_symbol = 'fa-utensils' %}
+                            {% elif t.category == 'Phone' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-mobile-alt' %}
+                            {% elif t.category == 'Entertainment' %}
+                                {% set icon_class = 'icon-entertainment' %}
+                                {% set icon_symbol = 'fa-film' %}
+                            {% elif t.category == 'Education' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-graduation-cap' %}
+                            {% elif t.category == 'Beauty' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-spa' %}
+                            {% elif t.category == 'Sports' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-football-ball' %}
+                            {% elif t.category == 'Social' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-users' %}
+                            {% elif t.category == 'Transportation' or 'Transport' in t.category %}
+                                {% set icon_class = 'icon-transport' %}
+                                {% set icon_symbol = 'fa-bus' %}
+                            {% elif t.category == 'Clothing' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-tshirt' %}
+                            {% elif t.category == 'Car' %}
+                                {% set icon_class = 'icon-transport' %}
+                                {% set icon_symbol = 'fa-car' %}
+                            {% elif t.category == 'Alcohol' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-wine-bottle' %}
+                            {% elif t.category == 'Cigarettes' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-smoking' %}
+                            {% elif t.category == 'Electronics' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-laptop' %}
+                            {% elif t.category == 'Travel' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-plane' %}
+                            {% elif t.category == 'Health' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-heartbeat' %}
+                            {% elif t.category == 'Pets' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-paw' %}
+                            {% elif t.category == 'Repairs' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-wrench' %}
+                            {% elif t.category == 'Housing' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-home' %}
+                            {% elif t.category == 'Home' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-couch' %}
+                            {% elif t.category == 'Gifts' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-gift' %}
+                            {% elif t.category == 'Donations' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-hand-holding-heart' %}
+                            {% elif t.category == 'Lottery' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-dice' %}
+                            {% elif t.category == 'Snacks' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-cookie' %}
+                            {% elif t.category == 'Kids' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-baby' %}
+                            {% elif t.category == 'Vegetables' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-carrot' %}
+                            {% elif t.category == 'Fruits' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-apple-alt' %}
+                            {% elif t.category == 'Bills' %}
+                                {% set icon_class = 'icon-other' %}
+                                {% set icon_symbol = 'fa-file-invoice-dollar' %}
+                            {% endif %}
+
+                            <div class="category-icon {{ icon_class }}">
+                                <i class="fas {{ icon_symbol }}"></i>
+                            </div>
+                            <div class="t-details">
+                                <span class="t-category">{{ t.category if t.type == 'expense' else t.source }}</span>
+                                {% if t.description %}
+                                <span class="t-desc">{{ t.description }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="t-amount {{ 'amount-income' if t.type == 'income' else 'amount-expense' }}">
+                            {{ '-' if t.type == 'expense' else '' }}{{ '%.0f' | format(t.base_amount / 100) }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+
+                {% if not grouped_transactions %}
+                <div style="text-align: center; padding: 40px; color: #9ca3af;">
+                    <i class="fas fa-receipt" style="font-size: 3em; margin-bottom: 10px; opacity: 0.5;"></i>
+                    <p>No records for this month.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="bottom-nav">
+            <a href="{{ url_for('dashboard') }}" class="nav-item active">
+                <i class="fas fa-bars"></i>
+                <span>Records</span>
+            </a>
+        
+            <a href="{{ url_for('charts') }}" class="nav-item">
+                <i class="fas fa-chart-pie"></i>
+                <span>Charts</span>
+            </a>
+        
+            <a href="{{ url_for('add_expense') }}" class="fab-btn">
+                <i class="fas fa-plus"></i>
+            </a>
+        
+            <a href="#" class="nav-item">
+                <i class="fas fa-file-alt"></i>
+                <span>Reports</span>
+            </a>
+        
+            <a href="{{ url_for('profile') }}" class="nav-item">
+                <i class="far fa-user"></i>
+                <span>Me</span>
+            </a>
+        </div>
+
+        <div id="dateModal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">Select Date</div>
+                <div class="year-selector">
+                    <button class="year-btn" onclick="changeYear(-1)">❮</button>
+                    <span id="modalYear">{{ current_year }}</span>
+                    <button class="year-btn" onclick="changeYear(1)">❯</button>
+                </div>
+                <div class="month-grid" id="monthGrid"></div>
+                <div class="modal-actions">
+                    <button class="modal-btn btn-cancel" onclick="closeDateModal()">Cancel</button>
+                    <button class="modal-btn btn-confirm" onclick="applyDateFilter()">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedYear = Number("{{ current_year }}");
+        let selectedMonth = Number("{{ current_month }}");
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+        // --- SEARCH FUNCTIONALITY ---
+        function toggleSearch() {
+            const searchBar = document.getElementById('searchBar');
+            if (searchBar.style.display === 'flex') {
+                searchBar.style.display = 'none';
+                document.getElementById('searchInput').value = ''; // Clear input
+                filterTransactions(); // Reset results
+            } else {
+                searchBar.style.display = 'flex';
+                document.getElementById('searchInput').focus();
+            }
+        }
+
+        function filterTransactions() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const groups = document.querySelectorAll('.daily-group');
+            const noResultsMsg = document.getElementById('noResultsMsg');
+            let globalMatchCount = 0;
+
+            groups.forEach(group => {
+                const items = group.querySelectorAll('.transaction-item');
+                let visibleInGroup = 0;
+
+                items.forEach(item => {
+                    // Get Category Name
+                    const categoryEl = item.querySelector('.t-category');
+                    const categoryText = categoryEl ? categoryEl.innerText.toLowerCase() : '';
+                    
+                    // Get Description (if exists)
+                    const descEl = item.querySelector('.t-desc');
+                    const descText = descEl ? descEl.innerText.toLowerCase() : '';
+
+                    // Check match
+                    if (categoryText.includes(query) || descText.includes(query)) {
+                        item.style.display = 'flex';
+                        visibleInGroup++;
+                        globalMatchCount++;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+
+                // Hide the daily group header if no items match inside it
+                if (visibleInGroup > 0) {
+                    group.style.display = 'block';
+                } else {
+                    group.style.display = 'none';
+                }
+            });
+
+            // Show "No results" if everything is hidden
+            if (globalMatchCount === 0 && query.length > 0) {
+                noResultsMsg.style.display = 'block';
+            } else {
+                noResultsMsg.style.display = 'none';
+            }
+        }
+
+        // --- DATE MODAL LOGIC ---
+        function openDateModal() {
+            document.getElementById('dateModal').style.display = 'flex';
+            renderMonths();
+            document.getElementById('modalYear').innerText = selectedYear;
+        }
+
+        function closeDateModal() {
+            document.getElementById('dateModal').style.display = 'none';
+        }
+
+        function changeYear(delta) {
+            selectedYear += delta;
+            document.getElementById('modalYear').innerText = selectedYear;
+        }
+
+        function selectMonth(index) {
+            selectedMonth = index + 1;
+            renderMonths();
+        }
+
+        function renderMonths() {
+            const grid = document.getElementById('monthGrid');
+            grid.innerHTML = '';
+            months.forEach((m, index) => {
+                const div = document.createElement('div');
+                div.className = `month-item ${index + 1 === selectedMonth ? 'selected' : ''}`;
+                div.innerText = m;
+                div.onclick = () => selectMonth(index);
+                grid.appendChild(div);
+            });
+        }
+
+        function applyDateFilter() {
+            window.location.href = `{{ url_for('dashboard') }}?month=${selectedMonth}&year=${selectedYear}`;
+        }
+
+        window.onclick = function (event) {
+            const modal = document.getElementById('dateModal');
+            if (event.target == modal) {
+                closeDateModal();
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Transaction | Money Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Mono', monospace;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .mobile-container {
+            width: 100%;
+            max-width: 375px;
+            height: 100vh;
+            max-height: 850px;
+            background-color: #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #333;
+        }
+
+        .header-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1em;
+            cursor: pointer;
+        }
+
+        .header-title {
+            font-size: 1.1em;
+            font-weight: 700;
+        }
+
+        .tab-switcher {
+            display: flex;
+            margin: 15px 20px;
+            background-color: #2a2a2a;
+            border-radius: 10px;
+            padding: 3px;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95em;
+        }
+
+        .tab.active {
+            background-color: #fff;
+            color: #000;
+            font-weight: 700;
+        }
+
+        /* FIXED: Added align-content: start to remove large gaps */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            padding: 20px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            flex: 1;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            align-content: start; /* This forces rows to stack at the top */
+        }
+
+        .category-grid::-webkit-scrollbar {
+            display: none;
+        }
+
+        .category-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .category-item:active {
+            transform: scale(0.95);
+        }
+
+        .category-icon {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background-color: #3a3a3a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.3em;
+            transition: all 0.3s;
+        }
+
+        .category-item.selected .category-icon {
+            background-color: #fdd835;
+            color: #000;
+        }
+
+        .category-name {
+            font-size: 0.7em;
+            color: #ccc;
+            text-align: center;
+            word-wrap: break-word;
+            max-width: 70px;
+        }
+
+        .amount-screen {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .amount-screen.active {
+            display: flex;
+        }
+
+        .amount-display {
+            padding: 40px 20px;
+            text-align: right;
+            border-bottom: 1px solid #333;
+            background: linear-gradient(180deg, #1a1a1a 0%, #2a2a2a 100%);
+        }
+
+        .amount-value {
+            font-size: 3.5em;
+            font-weight: 700;
+            color: #fdd835;
+            text-shadow: 0 2px 10px rgba(253, 216, 53, 0.3);
+        }
+
+        .note-input-row {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            gap: 10px;
+            border-bottom: 1px solid #333;
+            background-color: #1f1f1f;
+        }
+
+        .note-input {
+            flex: 1;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1em;
+            outline: none;
+        }
+
+        .note-input::placeholder {
+            color: #666;
+        }
+
+        .camera-icon {
+            font-size: 1.2em;
+            color: #999;
+            cursor: pointer;
+        }
+
+        .calculator-keypad {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2px;
+            background-color: #0a0a0a;
+            flex: 1;
+            padding: 2px;
+        }
+
+        .key {
+            background: linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%);
+            border: 1px solid #333;
+            color: #fff;
+            font-size: 1.8em;
+            font-weight: 500;
+            padding: 0;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 70px;
+        }
+
+        .key:active {
+            background: linear-gradient(180deg, #3a3a3a 0%, #2f2f2f 100%);
+            transform: scale(0.95);
+        }
+
+        .key.today {
+            background: linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 100%);
+            font-size: 0.85em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            flex-direction: column;
+        }
+
+        .key.today i {
+            font-size: 1.2em;
+        }
+
+        .key.confirm {
+            background: linear-gradient(180deg, #fdd835 0%, #f9ca24 100%);
+            color: #000;
+            font-weight: 700;
+            font-size: 2em;
+            box-shadow: 0 4px 15px rgba(253, 216, 53, 0.4);
+        }
+
+        .key.confirm:active {
+            background: linear-gradient(180deg, #f9ca24 0%, #f0b90b 100%);
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="mobile-container">
+        <div class="header">
+            <button class="header-btn" onclick="goBack()">Cancel</button>
+            <div class="header-title">Add</div>
+            <button class="header-btn"><i class="fas fa-redo"></i></button>
+        </div>
+
+        <div class="tab-switcher">
+            <div class="tab active" onclick="switchTab('expense')">Expense</div>
+            <div class="tab" onclick="switchTab('income')">Income</div>
+            <div class="tab" onclick="switchTab('transfer')">Transfer</div>
+        </div>
+
+        <div id="categoryScreen" class="category-grid"></div>
+
+        <div id="amountScreen" class="amount-screen">
+            <div class="amount-display">
+                <div class="amount-value" id="amountValue">0</div>
+            </div>
+
+            <div class="note-input-row">
+                <span style="color: #666;">Note :</span>
+                <input type="text" id="noteInput" class="note-input" placeholder="Enter a note...">
+                <i class="fas fa-camera camera-icon"></i>
+            </div>
+
+            <div class="calculator-keypad">
+                <button class="key" onclick="appendNumber('7')">7</button>
+                <button class="key" onclick="appendNumber('8')">8</button>
+                <button class="key" onclick="appendNumber('9')">9</button>
+                <button class="key today" onclick="setToday()"><i
+                        class="far fa-calendar-alt"></i><span>Today</span></button>
+
+                <button class="key" onclick="appendNumber('4')">4</button>
+                <button class="key" onclick="appendNumber('5')">5</button>
+                <button class="key" onclick="appendNumber('6')">6</button>
+                <button class="key" onclick="appendOperator('+')">+</button>
+
+                <button class="key" onclick="appendNumber('1')">1</button>
+                <button class="key" onclick="appendNumber('2')">2</button>
+                <button class="key" onclick="appendNumber('3')">3</button>
+                <button class="key" onclick="appendOperator('-')">−</button>
+
+                <button class="key" onclick="appendNumber('.')">.</button>
+                <button class="key" onclick="appendNumber('0')">0</button>
+                <button class="key" onclick="backspace()"><i class="fas fa-backspace"></i></button>
+                <button class="key confirm" onclick="saveTransaction()"><i class="fas fa-check"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'expense';
+        let selectedCategory = null;
+        let currentAmount = '0';
+        let selectedDate = new Date().toISOString().split('T')[0];
+
+        const expenseCategories = [
+            { name: 'Shopping', icon: 'fa-shopping-cart' },
+            { name: 'Food', icon: 'fa-utensils' },
+            { name: 'Phone', icon: 'fa-mobile-alt' },
+            { name: 'Entertainment', icon: 'fa-film' },
+            { name: 'Education', icon: 'fa-graduation-cap' },
+            { name: 'Beauty', icon: 'fa-spa' },
+            { name: 'Sports', icon: 'fa-football-ball' },
+            { name: 'Social', icon: 'fa-users' },
+            { name: 'Transportation', icon: 'fa-bus' },
+            { name: 'Clothing', icon: 'fa-tshirt' },
+            { name: 'Car', icon: 'fa-car' },
+            { name: 'Alcohol', icon: 'fa-wine-bottle' },
+            { name: 'Cigarettes', icon: 'fa-smoking' },
+            { name: 'Electronics', icon: 'fa-laptop' },
+            { name: 'Travel', icon: 'fa-plane' },
+            { name: 'Health', icon: 'fa-heartbeat' },
+            { name: 'Pets', icon: 'fa-paw' },
+            { name: 'Repairs', icon: 'fa-wrench' },
+            { name: 'Housing', icon: 'fa-home' },
+            { name: 'Home', icon: 'fa-couch' },
+            { name: 'Gifts', icon: 'fa-gift' },
+            { name: 'Donations', icon: 'fa-hand-holding-heart' },
+            { name: 'Lottery', icon: 'fa-dice' },
+            { name: 'Snacks', icon: 'fa-cookie' },
+            { name: 'Kids', icon: 'fa-baby' },
+            { name: 'Vegetables', icon: 'fa-carrot' },
+            { name: 'Fruits', icon: 'fa-apple-alt' },
+            { name: 'Bills', icon: 'fa-file-invoice-dollar' },
+            { name: 'Settings', icon: 'fa-plus' }
+        ];
+
+        const incomeCategories = [
+            { name: 'Salary', icon: 'fa-briefcase' },
+            { name: 'Investments', icon: 'fa-chart-line' },
+            { name: 'Part-Time', icon: 'fa-clock' },
+            { name: 'Bonus', icon: 'fa-gift' },
+            { name: 'Others', icon: 'fa-cog' },
+            { name: 'Settings', icon: 'fa-plus' }
+        ];
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            renderCategories();
+        }
+
+        function renderCategories() {
+            const grid = document.getElementById('categoryScreen');
+            const categories = currentTab === 'expense' ? expenseCategories : incomeCategories;
+
+            grid.innerHTML = categories.map(cat => `
+                <div class="category-item" onclick="selectCategory('${cat.name}')">
+                    <div class="category-icon">
+                        <i class="fas ${cat.icon}"></i>
+                    </div>
+                    <div class="category-name">${cat.name}</div>
+                </div>
+            `).join('');
+        }
+
+        function selectCategory(category) {
+            selectedCategory = category;
+            document.getElementById('categoryScreen').classList.add('hidden');
+            document.getElementById('amountScreen').classList.add('active');
+        }
+
+        function appendNumber(num) {
+            if (currentAmount === '0') {
+                currentAmount = num;
+            } else {
+                currentAmount += num;
+            }
+            updateDisplay();
+        }
+
+        function appendOperator(op) {
+            currentAmount += op;
+            updateDisplay();
+        }
+
+        function backspace() {
+            currentAmount = currentAmount.slice(0, -1) || '0';
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            document.getElementById('amountValue').textContent = currentAmount;
+        }
+
+        function setToday() {
+            selectedDate = new Date().toISOString().split('T')[0];
+            alert('Date set to today: ' + selectedDate);
+        }
+
+        function saveTransaction() {
+            const note = document.getElementById('noteInput').value;
+
+            let amount;
+            try {
+                amount = eval(currentAmount);
+            } catch {
+                amount = parseFloat(currentAmount) || 0;
+            }
+
+            if (amount <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = currentTab === 'expense' ? '{{ url_for("add_expense") }}' : '{{ url_for("add_income") }}';
+
+            const fields = {
+                amount: amount,
+                currency: 'INR',
+                [currentTab === 'expense' ? 'category' : 'source']: selectedCategory,
+                description: note,
+                date: selectedDate
+            };
+
+            Object.keys(fields).forEach(key => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = fields[key];
+                form.appendChild(input);
+            });
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        function goBack() {
+            if (document.getElementById('amountScreen').classList.contains('active')) {
+                document.getElementById('amountScreen').classList.remove('active');
+                document.getElementById('categoryScreen').classList.remove('hidden');
+                currentAmount = '0';
+                updateDisplay();
+            } else {
+                window.location.href = '{{ url_for("dashboard") }}';
+            }
+        }
+
+        renderCategories();
+    </script>
+</body>
+
+</html>
