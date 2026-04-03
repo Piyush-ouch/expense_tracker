@@ -57,17 +57,25 @@ def send_push():
         if not fcm_token:
             return jsonify({'error': 'User does not have an FCM token registered'}), 400
 
-        # Construct highly visible FCM message
+        # Construct highly visible FCM message with HIGH priority
         message = messaging.Message(
             notification=messaging.Notification(
                 title='New Split Request!',
-                body=f'{sender_name} requested a split of ${amount} for: {description}',
+                body=f'{sender_name} requested a split of ₹{amount} for: {description}',
             ),
             data={
                 'type': 'split_request',
                 'amount': str(amount),
                 'description': str(description)
             },
+            android=messaging.AndroidConfig(
+                priority='high',
+                notification=messaging.AndroidNotification(
+                    channel_id='split_request_channel',
+                    priority='max',
+                    default_sound=True,
+                ),
+            ),
             token=fcm_token,
         )
 
@@ -78,6 +86,12 @@ def send_push():
     except Exception as e:
         print(f"Error sending FCM push: {e}")
         return jsonify({'error': str(e)}), 500
+
+
+# --- HEALTH CHECK (keeps Render free-tier warm) ---
+@app.route('/api/health', methods=['GET'])
+def health():
+    return jsonify({'status': 'ok'}), 200
 
 
 if __name__ == '__main__':
