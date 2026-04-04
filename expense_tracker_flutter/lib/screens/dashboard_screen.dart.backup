@@ -1,0 +1,656 @@
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
+import '../services/auth_service.dart';
+import '../services/firestore_service.dart';
+import '../models/user_model.dart';
+import '../models/expense_model.dart';
+import '../models/income_model.dart';
+import '../utils/theme.dart';
+import '../utils/constants.dart';
+import '../widgets/glowing_loader.dart';
+import 'add_expense_screen.dart';
+import 'add_income_screen.dart';
+import 'charts_screen.dart';
+import 'profile_screen.dart';
+import 'auth/login_screen.dart';
+
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  final _authService = AuthService();
+  final _firestoreService = FirestoreService();
+  int _selectedIndex = 0;
+  DateTime _selectedDate = DateTime.now();
+  UserModel? _userData;
+  bool _showSearch = false;
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final user = _authService.currentUser;
+    if (user != null) {
+      final data = await _authService.getUserData(user.uid);
+      setState(() {
+        _userData = data;
+      });
+    }
+  }
+
+  DateTime get _startDate => DateTime(_selectedDate.year, _selectedDate.month, 1);
+  DateTime get _endDate => DateTime(_selectedDate.year, _selectedDate.month + 1, 0, 23, 59, 59);
+
+  void _showMonthPicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.cardColor,
+      builder: (context) => _buildMonthYearPicker(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screens = [
+      _buildDashboard(),
+      const ChartsScreen(),
+      Container(), // Placeholder for center FAB
+      Container(), // Reports placeholder
+      const ProfileScreen(),
+    ];
+
+    return Scaffold(
+      resizeToAvoidBottomInset: false, // Prevents FAB from moving when keyboard appears
+      appBar: _selectedIndex == 0 ? _buildAppBar() : null,
+      body: _selectedIndex == 2 
+          ? _buildDashboard() // Show dashboard when FAB is tapped
+          : screens[_selectedIndex],
+      bottomNavigationBar: BottomAppBar(
+        color: AppTheme.cardColor,
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8.0,
+        child: SizedBox(
+          height: 60,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(Icons.list_alt, 'Records', 0),
+              _buildNavItem(Icons.pie_chart, 'Charts', 1),
+              const SizedBox(width: 48), // Space for FAB
+              _buildNavItem(Icons.description, 'Reports', 3),
+              _buildNavItem(Icons.person_outline, 'Me', 4),
+            ],
+          ),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: AppTheme.accentColor,
+        foregroundColor: AppTheme.surfaceColor,
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const AddExpenseScreen()),
+          );
+        },
+        child: const Icon(Icons.add, size: 32),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    if (_showSearch) {
+      return AppBar(
+        backgroundColor: AppTheme.surfaceColor,
+        leading: null,
+        automaticallyImplyLeading: false,
+        title: TextField(
+          autofocus: true,
+          style: const TextStyle(color: AppTheme.textPrimary),
+          decoration: InputDecoration(
+            hintText: 'Search transactions...',
+            hintStyle: const TextStyle(color: AppTheme.textSecondary),
+            border: InputBorder.none,
+            filled: true,
+            fillColor: AppTheme.cardColor,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+          ),
+          onChanged: (value) => setState(() => _searchQuery = value),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.close, color: AppTheme.textSecondary),
+            onPressed: () => setState(() {
+              _showSearch = false;
+              _searchQuery = '';
+            }),
+          ),
+        ],
+      );
+    }
+
+    return AppBar(
+      backgroundColor: AppTheme.surfaceColor,
+      leading: IconButton(
+        icon: const Icon(Icons.menu, color: AppTheme.textPrimary),
+        onPressed: () {},
+      ),
+      title: const Text(
+        'Kharcha Pani',
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: AppTheme.textPrimary,
+        ),
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.search, color: AppTheme.textPrimary),
+          onPressed: () => setState(() => _showSearch = true),
+        ),
+        IconButton(
+          icon: const Icon(Icons.calendar_today, color: AppTheme.textPrimary),
+          onPressed: _showMonthPicker,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNavItem(IconData icon, String label, int index) {
+    final isSelected = _selectedIndex == index;
+    return InkWell(
+      onTap: () => setState(() => _selectedIndex = index),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            color: isSelected ? AppTheme.accentColor : AppTheme.textSecondary,
+            size: 24,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: isSelected ? AppTheme.accentColor : AppTheme.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDashboard() {
+    final user = _authService.currentUser;
+    if (user == null) return const Center(child: Text('Not logged in'));
+
+    return Column(
+      children: [
+        // Summary section
+        Container(
+          padding: const EdgeInsets.all(20),
+          color: AppTheme.surfaceColor,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Year label
+              Text(
+                _selectedDate.year.toString(),
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              // Month selector
+              GestureDetector(
+                onTap: _showMonthPicker,
+                child: Row(
+                  children: [
+                    Text(
+                      DateFormat('MMM').format(_selectedDate),
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    const Icon(
+                      Icons.keyboard_arrow_down,
+                      color: AppTheme.textPrimary,
+                      size: 16,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 15),
+              // Stats row
+              _buildStatsRow(user.uid),
+            ],
+          ),
+        ),
+
+        // Notification bar
+        // Container(
+        //   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        //   color: AppTheme.borderColor,
+        //   child: Row(
+        //     children: const [
+        //       Icon(Icons.error_outline, color: Color(0xFFef4444), size: 16),
+        //       SizedBox(width: 10),
+        //       Expanded(
+        //         child: Text(
+        //           'After logging in, you can back up your data in real time!',
+        //           style: TextStyle(
+        //             fontSize: 13,
+        //             color: Color(0xFFef4444),
+        //           ),
+        //         ),
+        //       ),
+        //     ],
+        //   ),
+        // ),
+
+        // Transactions list
+        Expanded(
+          child: _buildTransactionsList(user.uid),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatsRow(String uid) {
+    return StreamBuilder<List<ExpenseModel>>(
+      stream: _firestoreService.getExpenses(uid, _startDate, _endDate),
+      builder: (context, expenseSnapshot) {
+        return StreamBuilder<List<IncomeModel>>(
+          stream: _firestoreService.getIncomes(uid, _startDate, _endDate),
+          builder: (context, incomeSnapshot) {
+            double totalExpense = 0;
+            double totalIncome = 0;
+
+            if (expenseSnapshot.hasData) {
+              totalExpense = expenseSnapshot.data!
+                  .fold(0, (sum, expense) => sum + expense.displayBaseAmount);
+            }
+
+            if (incomeSnapshot.hasData) {
+              totalIncome = incomeSnapshot.data!
+                  .fold(0, (sum, income) => sum + income.displayBaseAmount);
+            }
+
+            // Calculate previous month's balance
+            final previousMonthStart = DateTime(_selectedDate.year, _selectedDate.month - 1, 1);
+            final previousMonthEnd = DateTime(_selectedDate.year, _selectedDate.month, 0, 23, 59, 59);
+
+            return StreamBuilder<List<ExpenseModel>>(
+              stream: _firestoreService.getExpenses(uid, previousMonthStart, previousMonthEnd),
+              builder: (context, prevExpenseSnapshot) {
+                return StreamBuilder<List<IncomeModel>>(
+                  stream: _firestoreService.getIncomes(uid, previousMonthStart, previousMonthEnd),
+                  builder: (context, prevIncomeSnapshot) {
+                    double prevExpense = 0;
+                    double prevIncome = 0;
+
+                    if (prevExpenseSnapshot.hasData) {
+                      prevExpense = prevExpenseSnapshot.data!
+                          .fold(0, (sum, expense) => sum + expense.displayBaseAmount);
+                    }
+
+                    if (prevIncomeSnapshot.hasData) {
+                      prevIncome = prevIncomeSnapshot.data!
+                          .fold(0, (sum, income) => sum + income.displayBaseAmount);
+                    }
+
+                    double previousBalance = prevIncome - prevExpense;
+                    // Only carry forward positive balance
+                    if (previousBalance < 0) previousBalance = 0;
+
+              itemBuilder: (context, index) {
+                final group = grouped[index];
+                return _buildDailyGroup(group['date'], group['transactions'], uid);
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  List<Map<String, dynamic>> _groupByDate(List<dynamic> transactions) {
+    final Map<String, List<dynamic>> grouped = {};
+    
+    for (var transaction in transactions) {
+      final dateKey = DateFormat('yyyy-MM-dd').format(transaction.date);
+      if (!grouped.containsKey(dateKey)) {
+        grouped[dateKey] = [];
+      }
+      grouped[dateKey]!.add(transaction);
+    }
+
+    return grouped.entries.map((entry) {
+      return {
+        'date': DateTime.parse(entry.key),
+        'transactions': entry.value,
+      };
+    }).toList();
+  }
+
+  Widget _buildDailyGroup(DateTime date, List<dynamic> transactions, String uid) {
+    double dailyExpense = 0;
+    double dailyIncome = 0;
+
+    for (var t in transactions) {
+      if (t is ExpenseModel) {
+        dailyExpense += t.displayBaseAmount;
+      } else {
+        dailyIncome += (t as IncomeModel).displayBaseAmount;
+      }
+    }
+
+    return Column(
+      children: [
+        // Daily header
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          color: AppTheme.cardColor,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                DateFormat('MMM dd  EEEE').format(date),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+              Text(
+                'Expenses: ${dailyExpense.toStringAsFixed(0)}   Income: ${dailyIncome.toStringAsFixed(0)}',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Transaction items
+        ...transactions.map((t) => _buildTransactionItem(t, uid)).toList(),
+      ],
+    );
+  }
+
+  Widget _buildTransactionItem(dynamic transaction, String uid) {
+    final isExpense = transaction is ExpenseModel;
+    final category = isExpense ? transaction.category : (transaction as IncomeModel).source;
+    final description = isExpense ? transaction.description : '';
+    final amount = transaction.displayBaseAmount;
+    final categoryStyle = _getCategoryStyle(category, isExpense);
+
+    return InkWell(
+      onLongPress: () => _deleteTransaction(transaction, uid),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        decoration: const BoxDecoration(
+          color: AppTheme.surfaceColor,
+          border: Border(
+            bottom: BorderSide(color: AppTheme.cardColor, width: 1),
+          ),
+        ),
+        child: Row(
+          children: [
+            // Category icon
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: categoryStyle['color'] as Color,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                categoryStyle['icon'] as IconData,
+                color: AppTheme.surfaceColor,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 15),
+            // Details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    category,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  if (description.isNotEmpty)
+                    Text(
+                      description,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            // Amount
+            Text(
+              '${isExpense ? '-' : ''}${amount.toStringAsFixed(0)}',
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Map<String, dynamic> _getCategoryStyle(String category, bool isExpense) {
+    if (!isExpense) {
+      // Income sources - all yellow
+      final incomeStyles = {
+        'Salary': {'icon': Icons.work, 'color': const Color(0xFFfdd835)},
+        'Freelance': {'icon': Icons.laptop_mac, 'color': const Color(0xFFfdd835)},
+        'Investment': {'icon': Icons.trending_up, 'color': const Color(0xFFfdd835)},
+        'Gift': {'icon': Icons.card_giftcard, 'color': const Color(0xFFfdd835)},
+        'Other': {'icon': Icons.attach_money, 'color': const Color(0xFFfdd835)},
+      };
+      return incomeStyles[category] ?? {'icon': Icons.account_balance_wallet, 'color': const Color(0xFFfdd835)};
+    }
+
+    // Expense categories with unique icons and colors
+    final styles = {
+      'Shopping': {'icon': Icons.shopping_cart, 'color': const Color(0xFFfde68a)},
+      'Food': {'icon': Icons.restaurant, 'color': const Color(0xFFa7f3d0)},
+      'Food & Drink': {'icon': Icons.restaurant, 'color': const Color(0xFFa7f3d0)},
+      'Phone': {'icon': Icons.phone_android, 'color': const Color(0xFFfbcfe8)},
+      'Entertainment': {'icon': Icons.movie, 'color': const Color(0xFFfbcfe8)},
+      'Education': {'icon': Icons.school, 'color': const Color(0xFFe5e7eb)},
+      'Beauty': {'icon': Icons.spa, 'color': const Color(0xFFe5e7eb)},
+      'Sports': {'icon': Icons.sports_soccer, 'color': const Color(0xFFe5e7eb)},
+      'Social': {'icon': Icons.people, 'color': const Color(0xFFe5e7eb)},
+      'Transportation': {'icon': Icons.directions_bus, 'color': const Color(0xFFbfdbfe)},
+      'Clothing': {'icon': Icons.checkroom, 'color': const Color(0xFFe5e7eb)},
+      'Car': {'icon': Icons.directions_car, 'color': const Color(0xFFbfdbfe)},
+      'Alcohol': {'icon': Icons.local_bar, 'color': const Color(0xFFe5e7eb)},
+      'Cigarettes': {'icon': Icons.smoking_rooms, 'color': const Color(0xFFe5e7eb)},
+      'Electronics': {'icon': Icons.laptop, 'color': const Color(0xFFe5e7eb)},
+      'Travel': {'icon': Icons.flight, 'color': const Color(0xFFe5e7eb)},
+      'Health': {'icon': Icons.favorite, 'color': const Color(0xFFe5e7eb)},
+      'Pets': {'icon': Icons.pets, 'color': const Color(0xFFe5e7eb)},
+      'Repairs': {'icon': Icons.build, 'color': const Color(0xFFe5e7eb)},
+      'Housing': {'icon': Icons.home, 'color': const Color(0xFFe5e7eb)},
+      'Home': {'icon': Icons.weekend, 'color': const Color(0xFFe5e7eb)},
+      'Gifts': {'icon': Icons.card_giftcard, 'color': const Color(0xFFe5e7eb)},
+      'Donations': {'icon': Icons.volunteer_activism, 'color': const Color(0xFFe5e7eb)},
+      'Lottery': {'icon': Icons.casino, 'color': const Color(0xFFe5e7eb)},
+      'Snacks': {'icon': Icons.cookie, 'color': const Color(0xFFe5e7eb)},
+      'Kids': {'icon': Icons.child_care, 'color': const Color(0xFFe5e7eb)},
+      'Vegetables': {'icon': Icons.eco, 'color': const Color(0xFFe5e7eb)},
+      'Fruits': {'icon': Icons.apple, 'color': const Color(0xFFe5e7eb)},
+      'Bills': {'icon': Icons.receipt_long, 'color': const Color(0xFFe5e7eb)},
+      'Other': {'icon': Icons.receipt, 'color': const Color(0xFFe5e7eb)},
+    };
+
+    return styles[category] ?? {'icon': Icons.receipt, 'color': const Color(0xFFe5e7eb)};
+  }
+
+  Future<void> _deleteTransaction(dynamic transaction, String uid) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.cardColor,
+        title: const Text('Delete Transaction', style: TextStyle(color: AppTheme.textPrimary)),
+        content: const Text(
+          'Are you sure you want to delete this transaction?',
+          style: TextStyle(color: AppTheme.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && transaction.id != null) {
+      if (transaction is ExpenseModel) {
+        await _firestoreService.deleteExpense(uid, transaction.id!);
+      } else {
+        await _firestoreService.deleteIncome(uid, transaction.id!);
+      }
+    }
+  }
+
+  // Helper method for card digit groups
+  Widget _buildCardDigitGroup(String digits) {
+    return Text(
+      digits,
+      style: const TextStyle(
+        fontSize: 12,
+        color: Color(0xFF808080),
+        letterSpacing: 1,
+      ),
+    );
+  }
+
+  // Helper method for stat cards
+  Widget _buildStatCard(String label, double amount, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.cardColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 16),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${_userData?.displaySymbol ?? '\$'}${amount.toStringAsFixed(0)}',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMonthYearPicker() {
+    return Container(
+      height: 300,
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          const Text(
+            'Select Month',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Expanded(
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                childAspectRatio: 2,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+              ),
+              itemCount: 12,
+              itemBuilder: (context, index) {
+                final month = index + 1;
+                final isSelected = month == _selectedDate.month;
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedDate = DateTime(_selectedDate.year, month);
+                    });
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppTheme.accentColor : AppTheme.surfaceColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                      child: Text(
+                        DateFormat('MMM').format(DateTime(2000, month)),
+                        style: TextStyle(
+                          color: isSelected ? AppTheme.surfaceColor : AppTheme.textPrimary,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
