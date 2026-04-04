@@ -114,14 +114,6 @@ expense-tracker-flask/
 - User data isolated in Firestore
 - Profile pictures stored securely
 
-## 📝 License
-
-This project is open source and available under the [MIT License](LICENSE).
-
-## 👨‍💻 Author
-
-Your Name - [GitHub Profile](https://github.com/yourusername)
-
 ## 🤝 Contributing
 
 Contributions, issues, and feature requests are welcome!
